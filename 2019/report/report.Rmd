@@ -1,0 +1,457 @@
+---
+title: "Speeding up R for Calculating Euclidean Distances"
+author: 'Gibril'
+output: 
+    html_document:
+        toc : TRUE
+        toc_float: TRUE
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+The task is to calculate euclidean distances between rows in a matrix. It is divided into two subproblems, one with groups and without groups. The following `R` packages have been used:
+
+* `Rcpp`
+* `microbenchmark`: for timings
+
+A base `R` function was used as a benchmark for the timings. Three `C` source codes were used which were sourced into `R` via it's `C` API and a `C++` script via `Rcpp` library. 
+
+Function  | Language
+----------|---------
+naive_dist| `R`
+dot_dist  | `R`
+fastdist2 | `C++`
+eucDist   | `C` & `R`
+r_euc_dist| `C` & `R`
+cDist     | `C` & `R`
+
+
+# Timings : Ungrouped 
+Below are sample outputs from the functions for a matrix with 2000 entries for the ungrouped problem and relative timings of each of the functions for different matrix sizes. All timings were in milliseconds.
+
+```{r echo=FALSE, warning=FALSE, tidy=TRUE, fig.width=9, comment=''}
+
+library(microbenchmark)
+library(Rcpp)
+
+set.seed(1)
+
+sourceCpp('~/Desktop/2019/c_c++/abdul_code/fastdist.cpp')
+
+dyn.load('~/Desktop/2019/c_c++/euc_dist.so')
+dyn.load('~/Desktop/2019/c_c++/abdul_code/eucDist.so')
+dyn.load('~/Desktop/2019/c_c++/cDist.so')
+
+
+source('~/Desktop/2019/r_scripts/functions/r_euc_dist.R')
+source('~/Desktop/2019/r_scripts/functions/dot_dist.R')
+source('~/Desktop/2019/r_scripts/functions/naive_dist.R')
+source('~/Desktop/2019/r_scripts/functions/eucDist.R')
+source('~/Desktop/2019/r_scripts/functions/cDist.R')
+
+
+
+M = matrix(rnorm(2000, mean = 10, sd = 10), ncol = 2)
+
+microbenchmark(naive_dist(M), 
+               dist(M), 
+               r_euc_dist(M),
+               dot_dist(M),
+               fastdist2(M),
+               eucDist(M),
+               cDist(M),
+               unit = 'ms')
+
+print('naive_dist')
+head(naive_dist(M))
+print('dist')
+head(dist(M))
+print('r_euc_dist')
+head(r_euc_dist(M))
+print('dot_dist')
+head(dot_dist(M))
+print('fastdist2')
+head(fastdist2(M))
+print('eucDist')
+head(eucDist(M))
+print('cDist')
+head(cDist(M))
+              
+
+# timing data
+pp = list(m10 = 0.0146535 / c(0.0450285, 0.0409605, 0.0146535, 0.0098735, 0.0109350, 0.0028890, 0.0080135),
+          m100 = 0.0537830/ c(4.1130170, 3.5141160, 0.0537830, 0.0242315, 0.0262445, 0.0450945, 0.0165050),
+          m1000 = 2.8566960/ c(408.1175120, 348.2601585, 2.8566960, 1.0159860, 0.7056655, 4.0971850, 0.4011935),
+          m10000 = 337.96846/ c(41327.70777, 35103.25143, 337.96846, 153.70588, 121.82413, 457.65282,88.63522))
+
+
+
+
+ppdat = as.data.frame(pp)
+
+xcord = c(5,50,500, 5000)
+plot(xcord, 
+     ppdat[1,], 
+     ylim = c(0,10), 
+     type = 'l', 
+     col = 'red',
+     lwd = 3.5,
+     xlab = 'No. of rows in Matrix',
+     ylab = 'Relative time')
+
+
+points(xcord, ppdat[2,], type = 'l', col = 'cyan', lwd = 2)
+points(xcord, ppdat[3,], type = 'l', col = 'green', lwd = 2, lty = 2)
+points(xcord, ppdat[4,], type = 'l', col = 'gray', lwd = 2)
+points(xcord, ppdat[5,], type = 'l', col = 'brown', lwd = 2)
+points(xcord, ppdat[6,], type = 'l', col = 'violet', lwd = 2)
+points(xcord, ppdat[7,], type = 'l', col = 'black', lwd = 2)
+
+legend('topright', 
+       title = 'Functions', 
+       legend = c('naive_dist', 'dot_dist', 'dist',
+                  'eucDist', 'r_euc_dist', 'fastdist2', 'cDist'),
+       lwd = 3, 
+       col = c('red', 'cyan', 'green','gray', 'brown', 'violet', 'black'),
+       cex = 0.8)
+
+
+```
+
+# Timings: Grouped
+
+## Output
+Below are sample outputs from the functions `dist`, `cDist`, `naive_dist`, `r_euc_dist` and `eucDist` for the grouped problem. The outputs from all the functions are the same so only one is shown. The functions `dot_dist` and `fastdist2` could not be modified to allow for a vectorised calculation of distances within each group.
+```{r grouped, echo=F, comment=''}
+ grp = sample(1:50, 1000, replace = TRUE)
+    M   = matrix(rnorm(2000, mean = 10, sd = 10), ncol = 2)
+    M   = cbind(M, grp)
+    
+    by(M, grp, cDist)
+    
+    
+```
+
+## Relative times
+The graph below shows the relative timings of each of the functions for different matrix sizes. All timings are in milliseconds.
+```{r plot, echo=F}
+# timing data
+pp = list(m10 = 4.84 / c(4.84, 220.88, 5.99, 5.98, 5.56),
+          m100 = 5.32/ c(5.32, 872.21, 6.28, 6.25, 5.84),
+          m1000 = 8.39/ c(8.39, 5421.3, 7.91, 7.7, 7.3),
+          m10000 = 17.23/ c(17.23, 21675.56, 13.26, 11.45, 10.48))
+
+
+
+
+ppdat = as.data.frame(pp)
+
+xcord = c(500,1000,2500, 5000)
+plot(xcord, 
+     ppdat[1,], 
+     ylim = c(0,5), 
+     type = 'l', 
+     col = 'red',
+     lwd = 2,
+     lty = 2,
+     xlab = 'No. of rows in Matrix',
+     ylab = 'Relative time')
+
+
+points(xcord, ppdat[2,], type = 'l', col = 'green', lwd = 2)
+points(xcord, ppdat[3,], type = 'l', col = 'gray', lwd = 2)
+points(xcord, ppdat[4,], type = 'l', col = 'violet', lwd = 2)
+points(xcord, ppdat[5,], type = 'l', col = 'black', lwd = 2)
+
+
+legend('topright', 
+       title = 'Functions', 
+       legend = c('dist', 'naive_dist',
+                  'eucDist', 'r_euc_dist', 'cDist'),
+       lwd = 3, 
+       col = c('red', 'green','gray', 'violet', 'black'),
+       cex = 0.8)
+
+
+```
+
+# Functions
+The function `naive_dist()` is written purely in R using the formula `dist = sqrt((xi-xj)^2 + (yi-yj)^2)`, `dist()` is the base `R` implementation, `dot_dist()` is also written purely R but uses the dot product method of calculating distances, `fastdist2()` is a `C++` implementation of the calculation and `r_euc_dist()`, `eucDist()` and `cDist` are `R` wrapper functions for `C` implementaions of the calculation.
+
+`naive_dist()`
+```
+naive_dist <- function(x){
+
+#TODO: function documentation
+
+    result = vector('numeric', length = nrow(x) * (nrow(x) - 1)/2)
+    k = 1
+    for (i in 1:(nrow(x)-1)){
+        for (j in (i+1):nrow(x)){
+          result[k] = sqrt((x[i,1]-x[j,1])^2 + (x[i,2] - x[j,2])^2)
+          k = k + 1
+        }
+    }
+    result
+}
+```
+`dot_dist()`
+```
+dot_dist <- function(x){
+# TODO: function documentation
+  result = vector('numeric', length = nrow(x) * (nrow(x) - 1)/2)
+  
+  i = 1
+  m = 1
+  while (i <= (nrow(x)-1)){
+    for (j in (i+1):nrow(x)){
+      k         = x[i,] - x[j,]
+      result[m] = sqrt(k %*% k)
+      m         = m + 1
+    }
+    i = i + 1
+  }
+  result
+}
+```
+
+`fastdist2()`
+```
+// filename: fastdist2.cpp
+
+#include <Rcpp.h>
+using namespace Rcpp;
+
+//[[Rcpp::export]]
+
+NumericVector fastdist2 (const NumericMatrix &x){
+	unsigned int outrows = x.nrow(), i = 0, j = 0, k = 0;
+
+	Rcpp::NumericVector out(outrows * (outrows - 1)/2);
+
+	for (i = 0; i <= outrows - 2; i++){
+		for (j = i+1; j <= outrows - 1; j++){
+
+			out(k) = sqrt(sum(pow(x.row(i) - x.row(j), 2.0)));
+					k++;
+}
+	}
+	return out;
+}
+```
+`r_euc_dist() and euc_dist()`
+```
+# filename: r_euc_dist.R
+# last edited: 7-AUG-2019
+
+
+r_euc_dist <- function(matrix, cols_interest = 1:2){
+
+# R wrapper function for euc_dist.c
+# check euc_dist.c for source code and function documentation
+# input: 
+#		matrix: an N by 2 numeric matrix
+#		cols_interest : if input is a data.frame, the cols to be used.
+		 
+# output: a vector of euclidean distances between rows
+	cpMat   = matrix[, cols_interest]
+	len_mat = dim(cpMat)[1] * dim(cpMat)[2]
+    n_rows  = nrow(cpMat)
+    vec     = as.vector(t(cpMat))
+
+    .C("euc_dist",
+        as.double(vec),
+        as.integer(len_mat),
+        as.double(vector("double", n_rows * (n_rows - 1)/2)))[[3]]
+
+    }
+    
+/*
+filename: euc_dist.c
+last edited: 23-JUL-2019
+*/
+
+
+#include <R.h>
+#include <math.h>
+
+/*
+Calculates the euclidean distance between rows of a matrix
+
+input: 
+    vec: a one dimensional array of length N * 2 where N is the number of rows
+       in the input matrix.
+    len_vec: N * 2
+output:
+    result: a one dimensional array of length N * 2 containing the calculated distances 
+*/
+
+void euc_dist(double *vec, int *len_vec, double *result)
+{
+    int k = 0, i, j, iter1 = *len_vec - 3, iter2 = *len_vec - 1;
+
+    for (i = 0; i < iter1; i += 2){
+        for (j = i + 2; j < iter2; j += 2){
+            result[k] = sqrt((vec[i] - vec[j]) * (vec[i] - vec[j]) 
+						+ (vec[i+1] - vec[j+1]) * (vec[i+1] - vec[j+1]));
+            k++;
+        }
+      }
+
+}
+
+```
+
+`eucDist() and eucDist()`
+```
+# filename: eucDist.R
+# wrapper function for eucDist.c
+# TODO: error correcting code
+
+eucDist <- function(matrix, cols_interest = 1:2){
+	
+	cpMat 	= matrix[, cols_interest]
+    len_mat = dim(matrix)[1] * dim(matrix)[2]
+    n_rows  = nrow(matrix)
+    n_cols  = ncol(matrix)
+    vec     = as.vector(t(matrix))
+
+    
+    .C('eucDist',
+       as.double(vec),
+       as.integer(n_rows),
+       as.integer(n_cols),
+       as.double(vector("double", n_rows * (n_rows - 1)/2))
+       )[[4]]
+}
+
+#include <math.h>
+#include <R.h>
+#include <Rinternals.h>
+
+/* Euclidean distance */
+/*q=.C("eucdist",as.integer(c(1,2,3,4,5,6,7,8)),as.integer(4),as.integer(2),as.double(vector("double",6))*/
+void eucDist(double *x, int *m, int *n, double *d)
+{
+  /* Arguement:
+    1.  x is a matrix of dimension n by m
+    2.  m is the number of rows
+    3.  n is the number of coloums
+    4.  d is the pointer for output */
+  /*
+   d = sqrt(sum((XI-XJ).^2,2));            % Euclidean
+   */
+  int i,j,k; /* **pointer; /* Indexers */
+  int local_m, local_n;
+  local_m = *m, local_n = *n;
+  double theSum; /* size_t is an unsigned integer of size 16 bits */
+  /*
+  XI for indexing rows
+  XJ for indexing columns
+  XI0 unknown for now 
+  */
+  int  XI, XJ, XI0, index; /* pointers as row indexers*/
+  // d = malloc( local_m*(local_m - 1)/2);
+  // XI0 =  (double *) x; /* we are not tuching x but using its memory address as XI */
+  // x = (double) x;
+  index = 0;
+
+  for (i=0; i<local_m-1; ++i) { /* Iterating through the rows of the matrix */
+    // XI0 =  XI; /* taking the memory address of the array (Refer to line 29) */
+    XI = i*local_n; /* Move along memory by n ( the first coloumn */
+    XI0 = XI;
+    // Rprintf("XI is %d\n", XI);    
+    for (j=i+1; j<local_m; ++j) { /* iterating through the rows from the i_th row*/
+      // XI = x + i*(*n); /* Change to XI happpens here after using it on line 28*/
+      XJ = j*local_n;
+      // Rprintf("XJ is %d\n", XJ);
+      // XI = XI0; /* Index? */
+      theSum = 0.0;
+      for (k=0;k<local_n;k++,++XI,++XJ){
+        theSum += pow((x[XI]- x[XJ]), 2.0);
+        // Rprintf("x[XI] is %lf and x[XJ] is %lf\n", x[XI], x[XJ]);
+        // Rprintf("The sum is %lf\n", theSum);
+        // Rprintf("The sum is %d\n", theSum);
+      }
+      XI = XI0;
+      d[index++] = sqrt(theSum);
+      // Rprintf("d is %lf\n", d[index]);
+      // XI = XI0; /* Index? */
+    }
+  }
+}
+```
+`cDist() and cDist()`
+```
+/* 
+filename: cDist.c
+last edited: 24-JUL-19
+*/
+
+
+/*
+ exactly as euc_dist.c but modified to use R's .Call() interface
+
+ input:
+    Rvec: a one-dimensional array of length N * 2 where N is the number of rows
+          in the input matrix.
+    
+    resLen: an integer (coerced to double) of the number of pairs
+            calculated as N * (N - 1)/2.
+ output:
+    result: a one-dimensional array containing the calculated distances.  
+*/
+
+#include <R.h>
+#include <Rinternals.h>
+#include <math.h>
+
+SEXP cDist(SEXP Rvec, SEXP resLen){
+    int k = 0, i, j, iter1 = length(Rvec) - 3, iter2 = length(Rvec) - 1;
+
+    SEXP result = PROTECT(allocVector(REALSXP, asReal(resLen)));
+    double *vec = REAL(Rvec);
+
+    for(i = 0; i < iter1; i += 2){
+        for(j = i + 2; j < iter2; j += 2){
+            REAL(result)[k] = sqrt(((vec[i] - vec[j]) * (vec[i] - vec[j])) + 
+                         ((vec[i+1] - vec[j+1]) * (vec[i+1] - vec[j+1])));
+            k++;
+        }
+    }
+
+    UNPROTECT(1);
+    return result;
+ 
+}
+
+# filename: cDist.R
+# last edited: 7-AUG-19
+
+
+# wrapper function for cDist.c
+# see cDist.c for function documentation
+#
+# input: 
+#		matrix: an N by 2 numeric matrix
+#		cols_interest : if input is a data.frame, the cols to be used.
+#
+# output: a vector of euclidean distances between the rows of the matrix.
+# TODO: error-correcting code
+
+
+
+cDist <- function(matrix, cols_interest = 1:2){
+	cpMat  = matrix[, cols_interest]
+    vec    = as.vector(t(cpMat))
+    reslen = nrow(cpMat) * (nrow(cpMat) - 1) * 0.5
+
+    .Call("cDist",
+           as.double(vec),
+           as.double(reslen))
+}
+```

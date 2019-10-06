@@ -1,0 +1,25 @@
+Unit: milliseconds
+                                                                           expr
+ for (i in 1:50) {     result[[i]] = naive_dist(as.matrix(M[grp == i][, -3])) }
+      min       lq     mean   median       uq      max neval
+ 93.38279 106.0786 144.5816 117.7975 184.8437 241.1058   100
+Unit: milliseconds
+                                                                         expr
+ for (i in 1:50) {     result[[i]] = dot_dist(as.matrix(M[grp == i][, -3])) }
+      min       lq     mean   median       uq      max neval
+ 83.07273 87.09934 96.65671 89.72434 100.2187 210.4615   100
+Unit: milliseconds
+                                                                           expr
+ for (i in 1:50) {     result[[i]] = r_euc_dist(as.matrix(M[grp == i][, -3])) }
+      min       lq     mean   median       uq      max neval
+ 60.09552 65.03086 72.76556 67.90767 72.49335 144.8224   100
+Unit: milliseconds
+                                                                        expr
+ for (i in 1:50) {     result[[i]] = eucDist(as.matrix(M[grp == i][, -3])) }
+      min       lq     mean   median       uq      max neval
+ 60.86158 64.42176 74.71752 68.44055 75.55286 209.1209   100
+Unit: milliseconds
+                                                                          expr
+ for (i in 1:50) {     result[[i]] = fastdist2(as.matrix(M[grp == i][, -3])) }
+     min       lq     mean   median       uq      max neval
+ 58.3441 63.31176 68.69527 66.24626 70.14814 115.7815   100

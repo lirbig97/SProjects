@@ -1,0 +1,22 @@
+ Performance
+package: microbenchmark
+
+
+ Unit: milliseconds 	neval: 100
+
+   expr        min    lq      mean     median       uq        max 
+ naive_dist(M) 107.49 112.22  155.42  124.84       165.07    509.27   
+ dist(M)       2.39   2.48    4.72    3.80         4.15      49.68   
+ r_euc_dist(M)   2.525482   2.669574   10.821654    3.885404    6.880441  131.09797   
+   dot_dist(M) 785.339277 893.218854 1114.089400 1014.230869 1180.308628 3018.74408   
+  fastdist2(M)   5.626003   5.774982    9.424658    7.127437    9.715948   51.39230   
+    eucDist(M)   2.502881   2.624169    7.312191    3.585839    6.213837   76.13825   
+
+
+
+
+ key:
+
+ eucDist: R wrapper function for eucDist.c
+ r_euc_dist: R wrapper function for euc_dist.c # my c code
+ dot_dist, naive_dist are the R functions i've written
