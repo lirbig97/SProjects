@@ -1,0 +1,70 @@
+---
+title: "Auto-Mpg"
+author: "Gibril"
+output: 
+    html_document:
+      toc: TRUE
+      toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Introduction
+The Auto-MPG dataset contains information about nine (9) attributes of cars. It can be used for testing different supervised learning algorthms mainly for regression.
+
+The aim of this project is to predict the fuel consumption in miles per gallon using regression techniques.
+
+# Dataset
+This dataset was obtained from [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/auto+mpg). It has 398 observations of 9 variables of cars. Of these, 3 are multivalued discrete and 6 are  continuous.
+
+The variables are:
+
+* mpg : city-cyle fuel consumption in miles per gallon
+* cylinders : number of cylinders in a car (categorical)
+    + 3 cylinders
+    + 4 cylinders
+    + 5 cylinders
+    + 6 cylinders
+    + 8 cylinders
+  
+* disp : displacement
+* hp : engine horsepower
+* wt : weight (lbs)
+* accl : acceleration
+* model_yr : model year
+* origin
+* car name : name of each car
+
+The data was cleaned by converting the variables: `cylinders`, `model year` and `origin` into factors and the variable `car name` was used to extract manufacturer names of the cars. A new variable `manuc` stored manufacturer names of the cars and then `car names` was dropped. Futhermore, `horsepower` has 6 missing values which were imputed using the median values.
+```{r, echo=FALSE, warning=FALSE}
+library(ggplot2)
+auto.data = read.csv(file = '../Data/processed/auto.csv')
+auto.data$cylinders = factor(auto.data$cylinders)
+
+ggplot(auto.data, aes(hp)) + geom_histogram(aes(y = ..density..), fill = 'light blue', bins = 30) +
+  geom_density(col = "red") + labs(x = 'Horsepower', title = 'Distribution of Horsepower')
+```
+
+The processed data was stored in a CSV file for analysis. The following graph summarizes the pairwise relationship between the continuous variables in the dataset.
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE}
+library(GGally)
+    ggpairs(auto.data, 
+                columns = c(1,3:6),
+                axisLabels = 'none',
+                mapping = ggplot2::aes(alpha = 0.4, col = cylinders)) + 
+      ggtitle('Scatterplot Matrix of Auto - MPG')
+
+```
+
+
+
+
+# Training Methods
+## Linear Model
+
+# Results
+
+# Summary
