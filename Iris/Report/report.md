@@ -36,7 +36,7 @@ The variables in the datasets are:
 
 The graph below show the distributions and pairwise relationships of the
 continuous variables in the dataset.
-![](https://github.com/lirbig97/SProjects/blob/master/Iris/unnamed-chunk-1-1.jpeg)<!-- -->
+![](https://github.com/lirbig97/SProjects/blob/master/Iris/images/exploratory-1.jpeg)<!-- -->
 
 And finally, a correlation matrix of the variables in the dataset (excl.
 Id). The new variable `SpecNum` is the coded version of the `Species`
