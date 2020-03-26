@@ -49,7 +49,7 @@ The variables in the datasets are:
 
 The graph below show the distributions and pairwise relationships of the
 continuous variables in the dataset.
-![](report_files/figure-gfm/exploratory-1.jpeg)<!-- -->
+![](https://github.com/lirbig97/SProjects/blob/master/Iris/images/exploratory-1.jpeg)<!-- -->
 
 From the graph, we see that within each variable, the classes are
 approximately normally distributed. For Petal length and Petal width,
@@ -144,7 +144,7 @@ accuracy.
   plot(varImp(knn.fit1))
 ```
 
-![](report_files/figure-gfm/knn1-1.jpeg)<!-- -->
+![](https://github.com/lirbig97/SProjects/blob/master/Iris/images/knn1-1.jpeg)<!-- -->
 
 From the summary of k-NN model we see that, as suspected, the SepalWidth
 variable isn’t as important as the other variables as seen in the
